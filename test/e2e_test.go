@@ -503,8 +503,14 @@ func TestE2E_CreateGroupOptionalFields(t *testing.T) {
 }
 
 func TestE2E_Admin(t *testing.T) {
-	// 管理员账号由 schema/脚本创建；这里验证可登录且管理端接口可用。
-	r := login(t, "admin@echochat.com", "Admin@123456")
+	// 管理员凭据从环境变量读取，避免把账号口令写进仓库。
+	// 运行：E2E_ADMIN_ACCOUNT=xxx E2E_ADMIN_PASSWORD=yyy go test -tags e2e ./test -v -run TestE2E_Admin
+	account := os.Getenv("E2E_ADMIN_ACCOUNT")
+	password := os.Getenv("E2E_ADMIN_PASSWORD")
+	if account == "" || password == "" {
+		t.Skip("未设置 E2E_ADMIN_ACCOUNT / E2E_ADMIN_PASSWORD，跳过管理员用例")
+	}
+	r := login(t, account, password)
 	if r.Code != 200 {
 		t.Skipf("管理员账号未就绪或密码不符（跳过）: code=%d message=%s", r.Code, r.Message)
 	}
