@@ -1,0 +1,64 @@
+Name: echo-api
+Host: 0.0.0.0
+Port: 8888
+Timeout: 30000
+# 请求体大小上限（字节），默认仅 1MB，会拦掉大文件上传；这里放到 60MB 以配合前端 50MB 限制
+MaxBytes: 62914560
+Log:
+  Mode: console
+
+# TLS：已启用，让网关以 HTTPS/WSS 对外提供服务（与原 Gin 版 https/wss 对齐）
+# 证书文件放在 pkg/ssl/ 目录下，见项目根目录的证书生成步骤
+CertFile: ./pkg/ssl/server.crt
+KeyFile: ./pkg/ssl/server.key
+
+RabbitMQ:
+  Url: amqp://guest:guest@127.0.0.1:5672/
+  ChatExchange: im.chat
+  PushExchange: im.push
+  ChatQueue: im.chat.worker
+  PushQueuePrefix: push.gw
+
+CoreRpc:
+  Endpoints:
+    - 127.0.0.1:8081
+  NonBlock: true
+
+Static:
+  AvatarPath: ./static/avatars
+  FilePath: ./static/files
+
+# WebSocket 允许的 Origin 主机名白名单（忽略端口）；为空时仅允许 localhost/127.0.0.1。
+# 生产环境请在此填入前端实际域名，例如 your-domain.com。
+WsAllowedOrigins:
+  - localhost
+  - 127.0.0.1
+
+# 网关节点标识：多网关水平扩展时用于路由表与 etcd 注册；留空则回退 hostname-port
+NodeID: gw-1
+
+# etcd 网关节点注册：让集群感知节点存活，并在节点消失时触发路由清理；EtcdEndpoints 为空则不启用
+Registry:
+  EtcdEndpoints:
+    - 127.0.0.1:2379
+  Prefix: im
+
+# 网关用 Redis 校验登录令牌（仅当设置 ECHO_AUTH=on 开启鉴权时使用）
+RedisConf:
+  Host: 127.0.0.1
+  Port: 6379
+  Password: ""
+  Db: 0
+
+# Elasticsearch（聊天记录全文检索；Address 为空则不启用）
+Elastic:
+  Address: http://127.0.0.1:9200
+  Index: chat_message
+
+# 头像/文件上传改为存储到阿里云 OSS（AK/SK 从环境变量 ACID/ACSC 读取，需 conf.UseEnv()）
+Oss:
+  Endpoint: oss-cn-beijing.aliyuncs.com
+  BucketName: echo-chat0922
+  AccessKeyID: ${ACID}
+  AccessKeySecret: ${ACSC}
+  AutoCreateBucket: false

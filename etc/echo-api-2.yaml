@@ -1,0 +1,55 @@
+Name: echo-api-2
+Host: 0.0.0.0
+Port: 8889
+Timeout: 30000
+MaxBytes: 62914560
+Log:
+  Mode: console
+
+# 第二个网关节点（多节点水平扩展联调用）：与 echo-api.yaml 共用一个 rpc、Redis 路由表、RabbitMQ。
+# 本地起两个网关时用本配置；生产环境按节点各自下发 NodeID 即可。
+
+RabbitMQ:
+  Url: amqp://guest:guest@127.0.0.1:5672/
+  ChatExchange: im.chat
+  PushExchange: im.push
+  ChatQueue: im.chat.worker
+  PushQueuePrefix: push.gw
+
+CoreRpc:
+  Endpoints:
+    - 127.0.0.1:8081
+  NonBlock: true
+
+Static:
+  AvatarPath: ./static/avatars
+  FilePath: ./static/files
+
+WsAllowedOrigins:
+  - localhost
+  - 127.0.0.1
+
+# 第二个节点的稳定标识（要求全网关唯一）
+NodeID: gw-2
+
+Registry:
+  EtcdEndpoints:
+    - 127.0.0.1:2379
+  Prefix: im
+
+RedisConf:
+  Host: 127.0.0.1
+  Port: 6379
+  Password: ""
+  Db: 0
+
+Elastic:
+  Address: http://127.0.0.1:9200
+  Index: chat_message
+
+Oss:
+  Endpoint: oss-cn-beijing.aliyuncs.com
+  BucketName: echo-chat0922
+  AccessKeyID: ${ACID}
+  AccessKeySecret: ${ACSC}
+  AutoCreateBucket: false

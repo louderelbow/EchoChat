@@ -1,0 +1,331 @@
+syntax = "v1"
+
+// 统一响应外壳：严格复刻原 Gin 版 JsonBack 的 {code,message,data}
+// code: 200 成功 / 400 业务错误 / 500 系统错误（HTTP 状态码恒为 200）
+type CommonResp {
+	Code    int         `json:"code"`
+	Message string      `json:"message"`
+	Data    interface{} `json:"data,omitempty"`
+	Token   string      `json:"token,omitempty"`
+}
+
+// ---------------- 用户 ----------------
+type LoginReq {
+	Telephone string `json:"telephone"`
+	Password  string `json:"password"`
+}
+
+type RegisterReq {
+	Telephone string `json:"telephone"`
+	Password  string `json:"password"`
+	Nickname  string `json:"nickname"`
+	SmsCode   string `json:"sms_code"`
+}
+
+type SmsLoginReq {
+	Telephone string `json:"telephone"`
+	SmsCode   string `json:"sms_code"`
+}
+
+type SendSmsCodeReq {
+	Telephone string `json:"telephone"`
+}
+
+type UpdateUserInfoReq {
+	Uuid      string `json:"uuid"`
+	Email     string `json:"email"`
+	Nickname  string `json:"nickname"`
+	Birthday  string `json:"birthday"`
+	Signature string `json:"signature"`
+	Avatar    string `json:"avatar"`
+	Gender    int8   `json:"gender"`
+}
+
+type GetUserInfoListReq {
+	OwnerId string `json:"owner_id"`
+}
+
+type GetUserInfoReq {
+	Uuid string `json:"uuid"`
+}
+
+type AbleUsersReq {
+	UuidList []string `json:"uuid_list"`
+	IsAdmin  int8     `json:"is_admin"`
+}
+
+type WsLogoutReq {
+	OwnerId string `json:"owner_id"`
+}
+
+// ---------------- 通用 owner 列表 ----------------
+type OwnlistReq {
+	OwnerId string `json:"owner_id"`
+}
+
+// ---------------- 联系人 ----------------
+type GetContactInfoReq {
+	ContactId string `json:"contact_id"`
+}
+
+type DeleteContactReq {
+	OwnerId   string `json:"owner_id"`
+	ContactId string `json:"contact_id"`
+}
+
+type ApplyContactReq {
+	OwnerId   string `json:"owner_id"`
+	ContactId string `json:"contact_id"`
+	Message   string `json:"message,optional"`
+}
+
+type PassContactApplyReq {
+	OwnerId   string `json:"owner_id"`
+	ContactId string `json:"contact_id"`
+}
+
+type BlackContactReq {
+	OwnerId   string `json:"owner_id"`
+	ContactId string `json:"contact_id"`
+}
+
+type BlackApplyReq {
+	OwnerId   string `json:"owner_id"`
+	ContactId string `json:"contact_id"`
+}
+
+type AddGroupListReq {
+	GroupId string `json:"group_id"`
+}
+
+// ---------------- 群聊 ----------------
+type CreateGroupReq {
+	OwnerId string `json:"owner_id"`
+	Name    string `json:"name"`
+	Notice  string `json:"notice,optional"`
+	AddMode int8   `json:"add_mode"`
+	Avatar  string `json:"avatar,optional"`
+}
+
+type CheckGroupAddModeReq {
+	GroupId string `json:"group_id"`
+}
+
+type EnterGroupDirectlyReq {
+	OwnerId   string `json:"owner_id"`
+	ContactId string `json:"contact_id"`
+}
+
+type LeaveGroupReq {
+	UserId  string `json:"user_id"`
+	GroupId string `json:"group_id"`
+}
+
+type DismissGroupReq {
+	OwnerId string `json:"owner_id"`
+	GroupId string `json:"group_id"`
+}
+
+type GetGroupInfoReq {
+	GroupId string `json:"group_id"`
+}
+
+type DeleteGroupsReq {
+	UuidList []string `json:"uuid_list"`
+}
+
+type SetGroupsStatusReq {
+	UuidList []string `json:"uuid_list"`
+	Status   int8     `json:"status"`
+}
+
+type UpdateGroupInfoReq {
+	OwnerId string `json:"owner_id"`
+	Uuid    string `json:"uuid"`
+	Name    string `json:"name"`
+	Avatar  string `json:"avatar"`
+	AddMode int8   `json:"add_mode"`
+	Notice  string `json:"notice"`
+}
+
+type GetGroupMemberListReq {
+	GroupId string `json:"group_id"`
+}
+
+type RemoveGroupMembersReq {
+	GroupId  string   `json:"group_id"`
+	OwnerId  string   `json:"owner_id"`
+	UuidList []string `json:"uuid_list"`
+}
+
+// ---------------- 会话 ----------------
+type OpenSessionReq {
+	SendId    string `json:"send_id"`
+	ReceiveId string `json:"receive_id"`
+}
+
+type CreateSessionReq {
+	SendId    string `json:"send_id"`
+	ReceiveId string `json:"receive_id"`
+}
+
+type DeleteSessionReq {
+	OwnerId   string `json:"owner_id"`
+	SessionId string `json:"session_id"`
+}
+
+// ---------------- 消息 ----------------
+type GetMessageListReq {
+	UserOneId string `json:"user_one_id"`
+	UserTwoId string `json:"user_two_id"`
+}
+
+type GetGroupMessageListReq {
+	GroupId string `json:"group_id"`
+}
+
+@server(
+	prefix: ""
+)
+service echo-api {
+	// 用户
+	@handler Login
+	post /login (LoginReq) returns (CommonResp)
+
+	@handler Register
+	post /register (RegisterReq) returns (CommonResp)
+
+	@handler UpdateUserInfo
+	post /user/updateUserInfo (UpdateUserInfoReq) returns (CommonResp)
+
+	@handler GetUserInfoList
+	post /user/getUserInfoList (GetUserInfoListReq) returns (CommonResp)
+
+	@handler AbleUsers
+	post /user/ableUsers (AbleUsersReq) returns (CommonResp)
+
+	@handler GetUserInfo
+	post /user/getUserInfo (GetUserInfoReq) returns (CommonResp)
+
+	@handler DisableUsers
+	post /user/disableUsers (AbleUsersReq) returns (CommonResp)
+
+	@handler DeleteUsers
+	post /user/deleteUsers (AbleUsersReq) returns (CommonResp)
+
+	@handler SetAdmin
+	post /user/setAdmin (AbleUsersReq) returns (CommonResp)
+
+	@handler SendSmsCode
+	post /user/sendSmsCode (SendSmsCodeReq) returns (CommonResp)
+
+	@handler SmsLogin
+	post /user/smsLogin (SmsLoginReq) returns (CommonResp)
+
+	@handler WsLogout
+	post /user/wsLogout (WsLogoutReq) returns (CommonResp)
+
+	// 群聊
+	@handler CreateGroup
+	post /group/createGroup (CreateGroupReq) returns (CommonResp)
+
+	@handler LoadMyGroup
+	post /group/loadMyGroup (OwnlistReq) returns (CommonResp)
+
+	@handler CheckGroupAddMode
+	post /group/checkGroupAddMode (CheckGroupAddModeReq) returns (CommonResp)
+
+	@handler EnterGroupDirectly
+	post /group/enterGroupDirectly (EnterGroupDirectlyReq) returns (CommonResp)
+
+	@handler LeaveGroup
+	post /group/leaveGroup (LeaveGroupReq) returns (CommonResp)
+
+	@handler DismissGroup
+	post /group/dismissGroup (DismissGroupReq) returns (CommonResp)
+
+	@handler GetGroupInfo
+	post /group/getGroupInfo (GetGroupInfoReq) returns (CommonResp)
+
+	@handler GetGroupInfoList
+	post /group/getGroupInfoList returns (CommonResp)
+
+	@handler DeleteGroups
+	post /group/deleteGroups (DeleteGroupsReq) returns (CommonResp)
+
+	@handler SetGroupsStatus
+	post /group/setGroupsStatus (SetGroupsStatusReq) returns (CommonResp)
+
+	@handler UpdateGroupInfo
+	post /group/updateGroupInfo (UpdateGroupInfoReq) returns (CommonResp)
+
+	@handler GetGroupMemberList
+	post /group/getGroupMemberList (GetGroupMemberListReq) returns (CommonResp)
+
+	@handler RemoveGroupMembers
+	post /group/removeGroupMembers (RemoveGroupMembersReq) returns (CommonResp)
+
+	// 会话
+	@handler OpenSession
+	post /session/openSession (OpenSessionReq) returns (CommonResp)
+
+	@handler GetUserSessionList
+	post /session/getUserSessionList (OwnlistReq) returns (CommonResp)
+
+	@handler GetGroupSessionList
+	post /session/getGroupSessionList (OwnlistReq) returns (CommonResp)
+
+	@handler DeleteSession
+	post /session/deleteSession (DeleteSessionReq) returns (CommonResp)
+
+	@handler CheckOpenSessionAllowed
+	post /session/checkOpenSessionAllowed (CreateSessionReq) returns (CommonResp)
+
+	// 联系人
+	@handler GetUserList
+	post /contact/getUserList (OwnlistReq) returns (CommonResp)
+
+	@handler LoadMyJoinedGroup
+	post /contact/loadMyJoinedGroup (OwnlistReq) returns (CommonResp)
+
+	@handler GetContactInfo
+	post /contact/getContactInfo (GetContactInfoReq) returns (CommonResp)
+
+	@handler DeleteContact
+	post /contact/deleteContact (DeleteContactReq) returns (CommonResp)
+
+	@handler ApplyContact
+	post /contact/applyContact (ApplyContactReq) returns (CommonResp)
+
+	@handler GetNewContactList
+	post /contact/getNewContactList (OwnlistReq) returns (CommonResp)
+
+	@handler GetNewContactCount
+	post /contact/getNewContactCount (OwnlistReq) returns (CommonResp)
+
+	@handler PassContactApply
+	post /contact/passContactApply (PassContactApplyReq) returns (CommonResp)
+
+	@handler BlackContact
+	post /contact/blackContact (BlackContactReq) returns (CommonResp)
+
+	@handler CancelBlackContact
+	post /contact/cancelBlackContact (BlackContactReq) returns (CommonResp)
+
+	@handler GetAddGroupList
+	post /contact/getAddGroupList (AddGroupListReq) returns (CommonResp)
+
+	@handler RefuseContactApply
+	post /contact/refuseContactApply (PassContactApplyReq) returns (CommonResp)
+
+	@handler BlackApply
+	post /contact/blackApply (BlackApplyReq) returns (CommonResp)
+
+	// 消息
+	@handler GetMessageList
+	post /message/getMessageList (GetMessageListReq) returns (CommonResp)
+
+	@handler GetGroupMessageList
+	post /message/getGroupMessageList (GetGroupMessageListReq) returns (CommonResp)
+}
+

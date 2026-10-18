@@ -1,0 +1,50 @@
+Name: core.rpc
+ListenOn: 0.0.0.0:8081
+Mode: dev
+Timeout: 30000
+Log:
+  Mode: console
+
+Mysql:
+  Host: 127.0.0.1
+  Port: 3306
+  User: root
+  Password: "123456"
+  DatabaseName: echo_chat
+
+RedisConf:
+  Host: 127.0.0.1
+  Port: 6379
+  Password: ""
+  Db: 0
+
+# Elasticsearch（聊天记录全文检索；Address 为空则不启用）
+Elastic:
+  Address: http://127.0.0.1:9200
+  Index: chat_message
+
+RabbitMQ:
+  Url: amqp://guest:guest@127.0.0.1:5672/
+  ChatExchange: im.chat
+  PushExchange: im.push
+  ChatQueue: im.chat.worker
+  PushQueuePrefix: push.gw
+  # Canal(binlog) 变更事件队列；由 Canal 中间件声明并投递，留空则不启用缓存自动失效
+  CanalQueue: echo.canal.queue
+
+Static:
+  AvatarPath: ./static/avatars
+  FilePath: ./static/files
+
+# 验证码邮件的 SMTP 配置不再写在此处，改用环境变量（见 pkg/mail/mail.go）：
+#   ECHO_MAIL_HOST  smtp.qq.com（默认）
+#   ECHO_MAIL_PORT  465（默认）
+#   ECHO_MAIL_USER  发件人 QQ 邮箱
+#   ECHO_MAIL_PASS  QQ 邮箱 SMTP 授权码
+#   ECHO_MAIL_TO    收件人（默认同 ECHO_MAIL_USER）
+
+# etcd 网关注册监听：rpc 侧据此清理离线网关节点残留的路由（EtcdEndpoints 为空则不启用）
+Registry:
+  EtcdEndpoints:
+    - 127.0.0.1:2379
+  Prefix: im

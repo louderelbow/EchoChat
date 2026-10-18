@@ -1,0 +1,397 @@
+syntax = "proto3";
+
+package core;
+
+option go_package = "./core";
+
+// ---------- 通用 ----------
+message BaseResp {
+  int32  code    = 1; // 200 成功 / 400 业务错误 / 500 系统错误
+  string message = 2;
+}
+
+message OwnlistReq {
+  string owner_id = 1;
+}
+
+// ---------- 用户 ----------
+message UserInfo {
+  string uuid        = 1;
+  string nickname    = 2;
+  string telephone   = 3;
+  string avatar      = 4;
+  string email       = 5;
+  int32  gender      = 6;
+  string birthday    = 7;
+  string signature   = 8;
+  string created_at  = 9;
+  int32  is_admin    = 10;
+  int32  status      = 11;
+}
+
+message LoginReq {
+  string telephone = 1;
+  string password  = 2;
+}
+message LoginResp {
+  int32    code    = 1;
+  string   message = 2;
+  UserInfo user    = 3;
+}
+
+message RegisterReq {
+  string telephone = 1;
+  string password  = 2;
+  string nickname  = 3;
+  string sms_code  = 4;
+}
+message RegisterResp {
+  int32    code    = 1;
+  string   message = 2;
+  UserInfo user    = 3;
+}
+
+message SmsLoginReq {
+  string telephone = 1;
+  string sms_code  = 2;
+}
+
+message SendSmsCodeReq {
+  string telephone = 1;
+}
+
+message UpdateUserInfoReq {
+  string uuid      = 1;
+  string email     = 2;
+  string nickname  = 3;
+  string birthday  = 4;
+  string signature = 5;
+  string avatar    = 6;
+  int32  gender    = 7; // 性别，0.未知，1.男，2.女
+}
+
+message GetUserInfoReq {
+  string uuid = 1;
+}
+message GetUserInfoResp {
+  int32    code    = 1;
+  string   message = 2;
+  UserInfo user    = 3;
+}
+
+message GetUserInfoListReq {
+  string owner_id = 1;
+}
+message UserListItem {
+  string uuid       = 1;
+  string nickname   = 2;
+  string telephone  = 3;
+  int32  status     = 4;
+  int32  is_admin   = 5;
+  bool   is_deleted = 6;
+}
+message GetUserInfoListResp {
+  int32                 code    = 1;
+  string                message = 2;
+  repeated UserListItem users   = 3;
+}
+
+message AbleUsersReq {
+  repeated string uuid_list = 1;
+  int32           is_admin  = 2;
+}
+
+// ---------- 联系人 ----------
+message MyUserListItem {
+  string user_id   = 1;
+  string user_name = 2;
+  string avatar    = 3;
+}
+message MyUserListResp {
+  int32                   code    = 1;
+  string                  message = 2;
+  repeated MyUserListItem users   = 3;
+}
+
+message LoadMyJoinedGroupResp {
+  int32                code    = 1;
+  string               message = 2;
+  repeated GroupBriefItem groups = 3;
+}
+message GroupBriefItem {
+  string group_id   = 1;
+  string group_name = 2;
+  string avatar     = 3;
+}
+
+message ContactInfo {
+  string contact_id         = 1;
+  string contact_name       = 2;
+  string contact_avatar     = 3;
+  string contact_phone      = 4;
+  string contact_email      = 5;
+  int32  contact_gender     = 6;
+  string contact_signature  = 7;
+  string contact_birthday   = 8;
+  string contact_notice     = 9;
+  string contact_members    = 10;
+  int32  contact_member_cnt = 11;
+  string contact_owner_id   = 12;
+  int32  contact_add_mode   = 13;
+}
+message GetContactInfoReq {
+  string contact_id = 1;
+}
+message GetContactInfoResp {
+  int32       code    = 1;
+  string      message = 2;
+  ContactInfo contact = 3;
+}
+
+message ContactPairReq {
+  string owner_id   = 1;
+  string contact_id = 2;
+}
+message ApplyContactReq {
+  string owner_id   = 1;
+  string contact_id = 2;
+  string message    = 3;
+}
+message AddGroupListReq {
+  string group_id = 1;
+}
+message ContactApplyItem {
+  string contact_id     = 1;
+  string contact_name   = 2;
+  string contact_avatar = 3;
+  string message        = 4;
+}
+message ContactApplyListResp {
+  int32                     code    = 1;
+  string                    message = 2;
+  repeated ContactApplyItem items   = 3;
+}
+// 待处理申请数量（好友申请 + 我作为群主的加群申请），供前端红点提示
+message ContactApplyCountResp {
+  int32  code    = 1;
+  string message = 2;
+  int64  count   = 3;
+}
+
+// ---------- 群聊 ----------
+message CreateGroupReq {
+  string owner_id = 1;
+  string name     = 2;
+  string notice   = 3;
+  int32  add_mode = 4;
+  string avatar   = 5;
+}
+message CheckGroupAddModeReq {
+  string group_id = 1;
+}
+message CheckGroupAddModeResp {
+  int32  code     = 1;
+  string message  = 2;
+  int32  add_mode = 3;
+}
+message LeaveGroupReq {
+  string user_id  = 1;
+  string group_id = 2;
+}
+message DismissGroupReq {
+  string owner_id = 1;
+  string group_id = 2;
+}
+message GetGroupInfoReq {
+  string group_id = 1;
+}
+message GroupInfo {
+  string uuid       = 1;
+  string name       = 2;
+  string notice     = 3;
+  int32  member_cnt = 4;
+  string owner_id   = 5;
+  int32  add_mode   = 6;
+  int32  status     = 7;
+  string avatar     = 8;
+  bool   is_deleted = 9;
+}
+message GetGroupInfoResp {
+  int32     code    = 1;
+  string    message = 2;
+  GroupInfo group   = 3;
+}
+message GroupListItem {
+  string uuid       = 1;
+  string name       = 2;
+  string owner_id   = 3;
+  int32  status     = 4;
+  bool   is_deleted = 5;
+}
+message GetGroupInfoListResp {
+  int32                 code    = 1;
+  string                message = 2;
+  repeated GroupListItem groups = 3;
+}
+message DeleteGroupsReq {
+  repeated string uuid_list = 1;
+}
+message SetGroupsStatusReq {
+  repeated string uuid_list = 1;
+  int32           status    = 2;
+}
+message UpdateGroupInfoReq {
+  string owner_id = 1;
+  string uuid     = 2;
+  string name     = 3;
+  string avatar   = 4;
+  int32  add_mode = 5;
+  string notice   = 6;
+}
+message GetGroupMemberListReq {
+  string group_id = 1;
+}
+message GroupMember {
+  string user_id  = 1;
+  string nickname = 2;
+  string avatar   = 3;
+}
+message GetGroupMemberListResp {
+  int32                 code    = 1;
+  string                message = 2;
+  repeated GroupMember  members = 3;
+}
+message RemoveGroupMembersReq {
+  string          group_id  = 1;
+  string          owner_id  = 2;
+  repeated string uuid_list = 3;
+}
+
+// ---------- 会话 ----------
+message OpenSessionReq {
+  string send_id    = 1;
+  string receive_id = 2;
+}
+message OpenSessionResp {
+  int32  code       = 1;
+  string message    = 2;
+  string session_id = 3;
+}
+message UserSessionItem {
+  string session_id = 1;
+  string avatar     = 2;
+  string user_id    = 3;
+  string user_name  = 4;
+}
+message GetUserSessionListResp {
+  int32                  code     = 1;
+  string                 message  = 2;
+  repeated UserSessionItem sessions = 3;
+}
+message GroupSessionItem {
+  string session_id = 1;
+  string group_name = 2;
+  string group_id   = 3;
+  string avatar     = 4;
+}
+message GetGroupSessionListResp {
+  int32                   code     = 1;
+  string                  message  = 2;
+  repeated GroupSessionItem sessions = 3;
+}
+message DeleteSessionReq {
+  string owner_id   = 1;
+  string session_id = 2;
+}
+message CreateSessionReq {
+  string send_id    = 1;
+  string receive_id = 2;
+}
+message CheckOpenSessionAllowedResp {
+  int32  code    = 1;
+  string message = 2;
+  bool   allowed = 3;
+}
+
+// ---------- 消息 ----------
+message MessageItem {
+  string send_id     = 1;
+  string send_name   = 2;
+  string send_avatar = 3;
+  string receive_id  = 4;
+  int32  type        = 5;
+  string content     = 6;
+  string url         = 7;
+  string file_type   = 8;
+  string file_name   = 9;
+  string file_size   = 10;
+  string created_at  = 11;
+}
+message GetMessageListReq {
+  string user_one_id = 1;
+  string user_two_id = 2;
+}
+message GetMessageListResp {
+  int32               code     = 1;
+  string              message  = 2;
+  repeated MessageItem messages = 3;
+}
+message GetGroupMessageListReq {
+  string group_id = 1;
+}
+
+service Core {
+  // 用户
+  rpc Login(LoginReq) returns (LoginResp);
+  rpc Register(RegisterReq) returns (RegisterResp);
+  rpc SmsLogin(SmsLoginReq) returns (LoginResp);
+  rpc SendSmsCode(SendSmsCodeReq) returns (BaseResp);
+  rpc UpdateUserInfo(UpdateUserInfoReq) returns (BaseResp);
+  rpc GetUserInfo(GetUserInfoReq) returns (GetUserInfoResp);
+  rpc GetUserInfoList(GetUserInfoListReq) returns (GetUserInfoListResp);
+  rpc AbleUsers(AbleUsersReq) returns (BaseResp);
+  rpc DisableUsers(AbleUsersReq) returns (BaseResp);
+  rpc DeleteUsers(AbleUsersReq) returns (BaseResp);
+  rpc SetAdmin(AbleUsersReq) returns (BaseResp);
+
+  // 联系人
+  rpc GetUserList(OwnlistReq) returns (MyUserListResp);
+  rpc LoadMyJoinedGroup(OwnlistReq) returns (LoadMyJoinedGroupResp);
+  rpc GetContactInfo(GetContactInfoReq) returns (GetContactInfoResp);
+  rpc DeleteContact(ContactPairReq) returns (BaseResp);
+  rpc ApplyContact(ApplyContactReq) returns (BaseResp);
+  rpc GetNewContactList(OwnlistReq) returns (ContactApplyListResp);
+  rpc GetNewContactCount(OwnlistReq) returns (ContactApplyCountResp);
+  rpc PassContactApply(ContactPairReq) returns (BaseResp);
+  rpc RefuseContactApply(ContactPairReq) returns (BaseResp);
+  rpc BlackContact(ContactPairReq) returns (BaseResp);
+  rpc CancelBlackContact(ContactPairReq) returns (BaseResp);
+  rpc BlackApply(ContactPairReq) returns (BaseResp);
+  rpc GetAddGroupList(AddGroupListReq) returns (ContactApplyListResp);
+
+  // 群聊
+  rpc CreateGroup(CreateGroupReq) returns (BaseResp);
+  rpc LoadMyGroup(OwnlistReq) returns (LoadMyJoinedGroupResp);
+  rpc CheckGroupAddMode(CheckGroupAddModeReq) returns (CheckGroupAddModeResp);
+  rpc EnterGroupDirectly(ContactPairReq) returns (BaseResp);
+  rpc LeaveGroup(LeaveGroupReq) returns (BaseResp);
+  rpc DismissGroup(DismissGroupReq) returns (BaseResp);
+  rpc GetGroupInfo(GetGroupInfoReq) returns (GetGroupInfoResp);
+  rpc GetGroupInfoList(OwnlistReq) returns (GetGroupInfoListResp);
+  rpc DeleteGroups(DeleteGroupsReq) returns (BaseResp);
+  rpc SetGroupsStatus(SetGroupsStatusReq) returns (BaseResp);
+  rpc UpdateGroupInfo(UpdateGroupInfoReq) returns (BaseResp);
+  rpc GetGroupMemberList(GetGroupMemberListReq) returns (GetGroupMemberListResp);
+  rpc RemoveGroupMembers(RemoveGroupMembersReq) returns (BaseResp);
+
+  // 会话
+  rpc OpenSession(OpenSessionReq) returns (OpenSessionResp);
+  rpc GetUserSessionList(OwnlistReq) returns (GetUserSessionListResp);
+  rpc GetGroupSessionList(OwnlistReq) returns (GetGroupSessionListResp);
+  rpc DeleteSession(DeleteSessionReq) returns (BaseResp);
+  rpc CheckOpenSessionAllowed(CreateSessionReq) returns (CheckOpenSessionAllowedResp);
+
+  // 消息
+  rpc GetMessageList(GetMessageListReq) returns (GetMessageListResp);
+  rpc GetGroupMessageList(GetGroupMessageListReq) returns (GetMessageListResp);
+}
