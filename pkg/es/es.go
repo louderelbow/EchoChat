@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -134,10 +135,20 @@ func (c *Client) IndexMessage(ctx context.Context, doc map[string]any) error {
 // SearchReq 聊天记录检索请求（除 keyword 外均为可选，避免 go-zero 解析把未传字段当必填）
 type SearchReq struct {
 	Keyword   string `json:"keyword,optional"`
-	SessionId string `json:"session_id,optional"`
-	ReceiveId string `json:"receive_id,optional"`
+	SessionId string `json:"session_id,optional"` // 兼容字段：按会话 id 过滤
+	ReceiveId string `json:"receive_id,optional"` // 兼容字段：按接收方过滤
+	SelfId    string `json:"self_id,optional"`    // 当前用户 id（单聊过滤用）
+	ContactId string `json:"contact_id,optional"` // 会话对象：群 id 或对方用户 id
 	Size      int    `json:"size,optional"`
 	From      int    `json:"from,optional"`
+}
+
+// escapeWildcard 转义 wildcard 查询里的通配符，避免用户输入 * ? 被当通配符
+func escapeWildcard(s string) string {
+	s = strings.ReplaceAll(s, "\\", "\\\\")
+	s = strings.ReplaceAll(s, "*", "\\*")
+	s = strings.ReplaceAll(s, "?", "\\?")
+	return s
 }
 
 // SearchHit 单条命中
@@ -164,13 +175,49 @@ func (c *Client) SearchMessages(ctx context.Context, req SearchReq) (*SearchResp
 	if req.Size <= 0 || req.Size > 50 {
 		req.Size = 20
 	}
-	must := []any{map[string]any{"match": map[string]any{"content": req.Keyword}}}
-	filter := []any{}
-	if req.SessionId != "" {
-		filter = append(filter, map[string]any{"term": map[string]any{"session_id": req.SessionId}})
+	// 关键词：match（分词）+ wildcard（词内子串）双保险。
+	// 中文分词会把「你好」切成单个 token，单纯 match 时搜「你」搜不到「你好」，
+	// 加上 wildcard 按 token 子串匹配即可覆盖单字/子串检索。
+	must := []any{
+		map[string]any{"bool": map[string]any{
+			"should": []any{
+				map[string]any{"match": map[string]any{"content": req.Keyword}},
+				map[string]any{"wildcard": map[string]any{"content": map[string]any{
+					"value": "*" + escapeWildcard(req.Keyword) + "*",
+				}}},
+			},
+			"minimum_should_match": 1,
+		}},
 	}
-	if req.ReceiveId != "" {
-		filter = append(filter, map[string]any{"term": map[string]any{"receive_id": req.ReceiveId}})
+	filter := []any{}
+	if req.ContactId != "" {
+		// 按会话过滤：群聊用 receive_id（群 id）；单聊用「双方 send_id/receive_id」双向匹配。
+		// 不能按 session_id 过滤——同一会话每个成员各有一条 session 行，只会搜到自己发的消息。
+		if strings.HasPrefix(req.ContactId, "G") {
+			filter = append(filter, map[string]any{"term": map[string]any{"receive_id": req.ContactId}})
+		} else if req.SelfId != "" {
+			me, peer := req.SelfId, req.ContactId
+			filter = append(filter, map[string]any{"bool": map[string]any{
+				"should": []any{
+					map[string]any{"bool": map[string]any{"must": []any{
+						map[string]any{"term": map[string]any{"send_id": me}},
+						map[string]any{"term": map[string]any{"receive_id": peer}},
+					}}},
+					map[string]any{"bool": map[string]any{"must": []any{
+						map[string]any{"term": map[string]any{"send_id": peer}},
+						map[string]any{"term": map[string]any{"receive_id": me}},
+					}}},
+				},
+				"minimum_should_match": 1,
+			}})
+		}
+	} else {
+		if req.SessionId != "" {
+			filter = append(filter, map[string]any{"term": map[string]any{"session_id": req.SessionId}})
+		}
+		if req.ReceiveId != "" {
+			filter = append(filter, map[string]any{"term": map[string]any{"receive_id": req.ReceiveId}})
+		}
 	}
 	body := map[string]any{
 		"from": req.From,

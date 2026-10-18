@@ -520,6 +520,8 @@
                   v-for="(messageItem, index) in messageList"
                   :key="index"
                   class="message-item"
+                  :id="'msg-idx-' + index"
+                  :class="{ 'message-item-highlight': highlightIndex === index }"
                 >
                   <div
                     v-if="
@@ -1002,7 +1004,9 @@
                   <div
                     v-for="(hit, idx) in searchResults"
                     :key="idx"
+                    class="search-hit"
                     style="padding: 8px 4px; border-bottom: 1px solid #eee"
+                    @click="jumpToMessage(hit)"
                   >
                     <div style="color: #888; font-size: 12px">
                       {{ hit.created_at }} · {{ hit.send_name }}
@@ -1137,6 +1141,8 @@ export default {
       isMessageSearchModalVisible: false,
       searchKeyword: "",
       searchResults: [],
+      // 点击搜索结果后高亮的目标消息下标（-1 表示无）
+      highlightIndex: -1,
       videoPlayer: null,
       ICE_CFG: {},
       localStream: null,
@@ -2380,7 +2386,9 @@ export default {
           store.state.backendUrl + "/message/search",
           {
             keyword,
-            session_id: data.sessionId,
+            // 按会话参与者过滤：self_id 为当前用户，contact_id 为群 id 或对方用户 id
+            self_id: data.userInfo.uuid,
+            contact_id: data.contactInfo.contact_id,
           }
         );
         if (rsp.data.code == 200 && rsp.data.data) {
@@ -2395,12 +2403,57 @@ export default {
       }
     };
 
+    // 在已加载的聊天记录里定位搜索结果对应的那条消息
+    const findMessageIndex = (hit) => {
+      const list = data.messageList || [];
+      // 先按「发送人 + 时间 + 内容」精确匹配
+      for (let i = 0; i < list.length; i++) {
+        const m = list[i];
+        if (
+          m.send_id === hit.send_id &&
+          m.created_at === hit.created_at &&
+          (m.content || "") === (hit.content || "")
+        ) {
+          return i;
+        }
+      }
+      // 退一步：仅按「发送人 + 时间」匹配（文件消息正文为空）
+      for (let i = 0; i < list.length; i++) {
+        const m = list[i];
+        if (m.send_id === hit.send_id && m.created_at === hit.created_at) {
+          return i;
+        }
+      }
+      return -1;
+    };
+
+    // 点击搜索结果：关闭搜索框，滚动到对应消息并短暂高亮
+    const jumpToMessage = (hit) => {
+      const idx = findMessageIndex(hit);
+      data.isMessageSearchModalVisible = false;
+      if (idx < 0) {
+        ElMessage.warning("未在当前聊天记录中定位到该消息");
+        return;
+      }
+      data.highlightIndex = idx;
+      nextTick(() => {
+        const el = document.getElementById("msg-idx-" + idx);
+        if (el) {
+          el.scrollIntoView({ block: "center" });
+        }
+        setTimeout(() => {
+          data.highlightIndex = -1;
+        }, 2000);
+      });
+    };
+
     return {
       ...toRefs(data),
       router,
       showMessageSearchModal,
       closeMessageSearchModal,
       doSearchMessage,
+      jumpToMessage,
       safeHighlight,
       handleCreateGroup,
       showUserContactInfoModal,
@@ -3168,5 +3221,23 @@ h3 {
   max-height: 240px;
   border-radius: 10px;
   display: block;
+}
+
+/* 搜索结果条目：可点击跳转到对应消息 */
+.search-hit {
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background-color 0.15s;
+}
+
+.search-hit:hover {
+  background-color: var(--echo-primary-soft);
+}
+
+/* 从搜索结果跳转后，目标消息短暂高亮 */
+.message-item-highlight {
+  background-color: #fff6d6;
+  border-radius: 10px;
+  transition: background-color 0.3s;
 }
 </style>
